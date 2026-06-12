@@ -56,9 +56,15 @@
  *    MS_CLIENT_SECRET  = <Client secret value>
  *    MAIL_FROM         = valorizacion@agaleus.com  (buzón remitente)
  *
- * La app registration de Azure AD necesita "Mail.Send" (Application) con
- * admin consent. Las herramientas firma_* de Agaleus ya lo tienen
- * consentido en la misma app, así que reusamos esas credenciales.
+ * Para replicar los leads también en el Excel de SharePoint, configura:
+ *
+ *    SP_SITE_ID        = <site-id de Microsoft Graph del SharePoint>
+ *    SP_DRIVE_ID       = <drive-id de la biblioteca "Documentos">
+ *    SP_ITEM_ID        = <item-id del .xlsx>
+ *
+ * La app registration de Azure AD necesita "Mail.Send" + "Sites.ReadWrite.All"
+ * (Application) con admin consent. Las herramientas firma_* de Agaleus ya
+ * tienen consentido en la misma app, reusamos esas credenciales.
  *
  * ============================================================================
  */
@@ -72,6 +78,11 @@ const HEADERS = [
 
 // Dirección que recibirá un aviso por cada lead nuevo. Cadena vacía = desactivado.
 const NOTIFICATION_EMAIL = "valorizacion@agaleus.com";
+
+// Nombre de la tabla dentro del Excel de SharePoint. Tiene que existir
+// (Insertar -> Tabla, con nombre "Leads") en el .xlsx referenciado por
+// las Script Properties SP_SITE_ID + SP_DRIVE_ID + SP_ITEM_ID.
+const SP_TABLE_NAME = "Leads";
 
 /**
  * Función de diagnóstico: ejecútala desde el editor (botón "Ejecutar")
@@ -153,6 +164,7 @@ function doPost(e) {
       data.notas || ""
     ]);
 
+    writeToSharepointExcel_(data, fecha);
     sendNotification_(data, fecha);
 
     return ContentService
@@ -250,6 +262,83 @@ function sendNotification_(data, fecha) {
   } catch (err) {
     console.error("No se pudo enviar el aviso por email:", err);
   }
+}
+
+function writeToSharepointExcel_(data, fecha) {
+  try {
+    const props  = PropertiesService.getScriptProperties();
+    const tenant = props.getProperty("MS_TENANT_ID");
+    const client = props.getProperty("MS_CLIENT_ID");
+    const secret = props.getProperty("MS_CLIENT_SECRET");
+    const site   = props.getProperty("SP_SITE_ID");
+    const drive  = props.getProperty("SP_DRIVE_ID");
+    const item   = props.getProperty("SP_ITEM_ID");
+    if (!tenant || !client || !secret || !site || !drive || !item) {
+      console.warn("Faltan Script Properties para SharePoint. Escritura en Excel desactivada.");
+      return;
+    }
+
+    const fechaTxt = Utilities.formatDate(
+      fecha, Session.getScriptTimeZone() || "Europe/Madrid",
+      "dd/MM/yyyy HH:mm");
+    const fila = [[
+      fechaTxt,
+      data.provincia || "",
+      data.municipio || "",
+      data.empresa || "",
+      data.contacto || "",
+      data.cantidad || "",
+      data.unidad || "",
+      data.residuo || "Aceite usado",
+      data.frecuencia || "",
+      data.telefono || "",
+      data.email || "",
+      data.notas || ""
+    ]];
+
+    const token = graphToken_(tenant, client, secret);
+    const url = "https://graph.microsoft.com/v1.0/sites/" + site +
+                "/drives/" + drive + "/items/" + item +
+                "/workbook/tables/" + encodeURIComponent(SP_TABLE_NAME) + "/rows/add";
+    const res = UrlFetchApp.fetch(url, {
+      method: "post",
+      contentType: "application/json",
+      headers: { Authorization: "Bearer " + token },
+      payload: JSON.stringify({ values: fila }),
+      muteHttpExceptions: true,
+    });
+    const code = res.getResponseCode();
+    if (code !== 200 && code !== 201) {
+      console.error("Graph addRow HTTP " + code + ": " + res.getContentText().slice(0, 400));
+    }
+  } catch (err) {
+    console.error("No se pudo escribir en el Excel de SharePoint:", err);
+  }
+}
+
+function probarSharepoint() {
+  const props  = PropertiesService.getScriptProperties();
+  const required = ["MS_TENANT_ID", "MS_CLIENT_ID", "MS_CLIENT_SECRET",
+                    "SP_SITE_ID", "SP_DRIVE_ID", "SP_ITEM_ID"];
+  required.forEach(k => {
+    const v = props.getProperty(k);
+    console.log(k + ":", v ? "OK (" + String(v).slice(0,10) + "...)" : "FALTA");
+  });
+  for (const k of required) {
+    if (!props.getProperty(k)) throw new Error("Falta Script Property " + k);
+  }
+
+  const data = {
+    provincia: "Bizkaia", municipio: "Bilbao",
+    empresa: "PRUEBA APPSSCRIPT - BORRAR",
+    contacto: "Test desde Apps Script",
+    cantidad: "10", unidad: "L", residuo: "Aceite usado",
+    frecuencia: "Puntual",
+    telefono: "600000000", email: "test@test.com",
+    notas: "Fila enviada por probarSharepoint(). Borrala."
+  };
+  writeToSharepointExcel_(data, new Date());
+  console.log("Si no aparece error arriba, revisa el Excel de SharePoint.");
 }
 
 function graphToken_(tenant, client, secret) {
