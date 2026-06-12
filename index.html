@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a2e4a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Agaleus Comercial">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="logo_agaleus.png">
+  <link rel="icon" href="logo_agaleus.png">
+  <title>Agaleus &middot; Nuevo cliente</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <img src="logo_agaleus.png" alt="Agaleus" class="logo">
+    <h1>Nuevo cliente</h1>
+    <p class="subtitle">Aceite usado &middot; País Vasco</p>
+  </header>
+
+  <main>
+    <form id="lead-form" novalidate>
+      <label class="field">
+        <span class="label">Provincia</span>
+        <select id="provincia" name="provincia" required>
+          <option value="" disabled selected>Elige provincia…</option>
+          <option value="Bizkaia">Bizkaia</option>
+          <option value="Gipuzkoa">Gipuzkoa</option>
+          <option value="Araba">Araba</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="label">Municipio</span>
+        <select id="municipio" name="municipio" required disabled>
+          <option value="" disabled selected>Elige primero la provincia</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="label">Persona de contacto</span>
+        <input type="text" id="contacto" name="contacto" autocomplete="name" placeholder="Nombre y apellido" required>
+      </label>
+
+      <label class="field">
+        <span class="label">Cantidad estimada de aceite</span>
+        <div class="combo">
+          <input type="number" id="cantidad" name="cantidad" inputmode="decimal" min="0" step="any" placeholder="Ej: 200" required>
+          <select id="unidad" name="unidad">
+            <option value="L" selected>litros</option>
+            <option value="kg">kg</option>
+            <option value="bidones">bidones</option>
+          </select>
+        </div>
+      </label>
+
+      <label class="field">
+        <span class="label">Teléfono</span>
+        <input type="tel" id="telefono" name="telefono" autocomplete="tel" inputmode="tel" placeholder="6XX XXX XXX" required>
+      </label>
+
+      <label class="field">
+        <span class="label">Email</span>
+        <input type="email" id="email" name="email" autocomplete="email" inputmode="email" placeholder="cliente@ejemplo.com">
+      </label>
+
+      <label class="field">
+        <span class="label">Notas (opcional)</span>
+        <textarea id="notas" name="notas" rows="3" placeholder="Detalles, horarios de acceso, etc."></textarea>
+      </label>
+
+      <button type="submit" id="submit-btn" class="btn-primary">
+        <span class="btn-label">Enviar cliente</span>
+        <span class="btn-loader" hidden></span>
+      </button>
+    </form>
+
+    <div id="success" class="toast toast-ok" hidden>
+      <strong>¡Enviado!</strong>
+      <span>Cliente registrado correctamente.</span>
+      <button type="button" id="new-btn" class="btn-secondary">Añadir otro</button>
+    </div>
+
+    <div id="error" class="toast toast-err" hidden>
+      <strong>No se pudo enviar</strong>
+      <span id="error-msg">Revisa la conexión e inténtalo de nuevo.</span>
+      <button type="button" id="retry-btn" class="btn-secondary">Reintentar</button>
+    </div>
+  </main>
+
+  <footer>
+    <small>&copy; Agaleus</small>
+  </footer>
+
+  <script src="municipios.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

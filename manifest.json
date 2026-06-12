@@ -1,0 +1,25 @@
+{
+  "name": "Agaleus Comercial",
+  "short_name": "Agaleus",
+  "description": "Alta de clientes para recogida de aceite usado en el País Vasco.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a2e4a",
+  "theme_color": "#0a2e4a",
+  "icons": [
+    {
+      "src": "logo_agaleus.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo_agaleus.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
