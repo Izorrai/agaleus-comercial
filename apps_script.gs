@@ -50,6 +50,9 @@ const HEADERS = [
   "Teléfono", "Email", "Notas"
 ];
 
+// Dirección que recibirá un aviso por cada lead nuevo. Cadena vacía = desactivado.
+const NOTIFICATION_EMAIL = "valorizacion@agaleus.com";
+
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -71,6 +74,8 @@ function doPost(e) {
       data.notas || ""
     ]);
 
+    sendNotification_(data, fecha);
+
     return ContentService
       .createTextOutput(JSON.stringify({ ok: true }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -86,6 +91,66 @@ function doGet() {
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, service: "Agaleus Comercial" }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function sendNotification_(data, fecha) {
+  if (!NOTIFICATION_EMAIL) return;
+  try {
+    const fechaTxt = Utilities.formatDate(
+      fecha, Session.getScriptTimeZone() || "Europe/Madrid",
+      "dd/MM/yyyy HH:mm");
+    const empresa  = data.empresa  || "(sin nombre)";
+    const municipio = [data.municipio, data.provincia].filter(Boolean).join(", ");
+    const cantidad = [data.cantidad, data.unidad].filter(Boolean).join(" ");
+    const asunto = "Nuevo lead comercial - " + empresa;
+
+    const filas = [
+      ["Empresa",     empresa],
+      ["Contacto",    data.contacto  || ""],
+      ["Ubicación",   municipio],
+      ["Residuo",     data.residuo   || "Aceite usado"],
+      ["Cantidad",    cantidad],
+      ["Frecuencia",  data.frecuencia|| ""],
+      ["Teléfono",    data.telefono  || ""],
+      ["Email",       data.email     || ""],
+      ["Notas",       data.notas     || ""],
+      ["Recibido",    fechaTxt],
+    ];
+
+    const htmlRows = filas.map(([k, v]) =>
+      `<tr><td style="padding:6px 12px;background:#f4f6f9;font-weight:600;color:#0a2e4a;border-bottom:1px solid #e1e4e8;">${k}</td>` +
+      `<td style="padding:6px 12px;color:#1a1a1a;border-bottom:1px solid #e1e4e8;">${escapeHtml_(v)}</td></tr>`
+    ).join("");
+
+    const html =
+      `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1a1a;">
+         <h2 style="color:#0a2e4a;margin:0 0 12px;">Nuevo lead comercial</h2>
+         <p style="margin:0 0 16px;color:#6b7280;">Registrado desde la app móvil del comercial.</p>
+         <table style="border-collapse:collapse;border:1px solid #e1e4e8;border-radius:8px;overflow:hidden;">
+           ${htmlRows}
+         </table>
+         <p style="margin:20px 0 0;font-size:12px;color:#6b7280;">Ver todos los leads en la Google Sheet enlazada al script.</p>
+       </div>`;
+
+    const plano = filas.map(([k, v]) => `${k}: ${v}`).join("\n");
+
+    MailApp.sendEmail({
+      to:       NOTIFICATION_EMAIL,
+      subject:  asunto,
+      body:     plano,
+      htmlBody: html,
+      name:     "Agaleus Comercial",
+      replyTo:  data.email || undefined,
+    });
+  } catch (err) {
+    console.error("No se pudo enviar el aviso por email:", err);
+  }
+}
+
+function escapeHtml_(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
 }
 
 function getOrCreateSheet_() {
