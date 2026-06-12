@@ -80,6 +80,7 @@ form.addEventListener("submit", async (e) => {
     cantidad: document.getElementById("cantidad").value,
     unidad: document.getElementById("unidad").value,
     residuo: "Aceite usado",
+    frecuencia: document.getElementById("frecuencia").value,
     telefono: document.getElementById("telefono").value.trim(),
     email: document.getElementById("email").value.trim(),
     notas: document.getElementById("notas").value.trim()

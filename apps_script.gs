@@ -46,7 +46,7 @@
 const SHEET_NAME = "Leads";
 const HEADERS = [
   "Fecha", "Provincia", "Municipio", "Empresa", "Contacto",
-  "Cantidad", "Unidad", "Residuo",
+  "Cantidad", "Unidad", "Residuo", "Frecuencia",
   "Teléfono", "Email", "Notas"
 ];
 
@@ -65,6 +65,7 @@ function doPost(e) {
       data.cantidad || "",
       data.unidad || "",
       data.residuo || "Aceite usado",
+      data.frecuencia || "",
       data.telefono || "",
       data.email || "",
       data.notas || ""
