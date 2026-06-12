@@ -73,6 +73,65 @@ const HEADERS = [
 // Dirección que recibirá un aviso por cada lead nuevo. Cadena vacía = desactivado.
 const NOTIFICATION_EMAIL = "valorizacion@agaleus.com";
 
+/**
+ * Función de diagnóstico: ejecútala desde el editor (botón "Ejecutar")
+ * para verificar que el envío de email vía Graph funciona, sin tener
+ * que pasar por la app móvil. Los detalles aparecen en el panel de
+ * "Registro de ejecución" (abajo en el editor).
+ */
+function probarEmail() {
+  const props  = PropertiesService.getScriptProperties();
+  const tenant = props.getProperty("MS_TENANT_ID");
+  const client = props.getProperty("MS_CLIENT_ID");
+  const secret = props.getProperty("MS_CLIENT_SECRET");
+  const from   = props.getProperty("MAIL_FROM");
+  console.log("MS_TENANT_ID:",     tenant ? "OK (" + tenant.slice(0,8) + "...)" : "FALTA");
+  console.log("MS_CLIENT_ID:",     client ? "OK (" + client.slice(0,8) + "...)" : "FALTA");
+  console.log("MS_CLIENT_SECRET:", secret ? "OK (longitud " + secret.length + ")"  : "FALTA");
+  console.log("MAIL_FROM:",        from   ? from : "FALTA");
+  console.log("NOTIFICATION_EMAIL constante:", NOTIFICATION_EMAIL);
+  if (!tenant || !client || !secret || !from) {
+    throw new Error("Faltan Script Properties — configúralas en Settings > Script properties.");
+  }
+
+  console.log("Pidiendo token a Microsoft...");
+  const token = graphToken_(tenant, client, secret);
+  console.log("Token obtenido (longitud " + token.length + ")");
+
+  const message = {
+    message: {
+      subject: "[TEST] Prueba envio Agaleus Comercial",
+      body: {
+        contentType: "HTML",
+        content: "<p>Este es un email de prueba enviado desde la funcion <code>probarEmail()</code> del script.</p>" +
+                 "<p>Si lo recibes en <b>" + NOTIFICATION_EMAIL + "</b>, el flujo Graph esta correctamente configurado.</p>"
+      },
+      toRecipients: [{ emailAddress: { address: NOTIFICATION_EMAIL } }],
+    },
+    saveToSentItems: false,
+  };
+
+  console.log("Enviando email a " + NOTIFICATION_EMAIL + " desde " + from + "...");
+  const res = UrlFetchApp.fetch(
+    "https://graph.microsoft.com/v1.0/users/" + encodeURIComponent(from) + "/sendMail",
+    {
+      method: "post",
+      contentType: "application/json",
+      headers: { Authorization: "Bearer " + token },
+      payload: JSON.stringify(message),
+      muteHttpExceptions: true,
+    }
+  );
+  const code = res.getResponseCode();
+  console.log("HTTP " + code);
+  console.log("Body: " + res.getContentText().slice(0, 800));
+  if (code === 200 || code === 202) {
+    console.log("OK -> revisa la bandeja de " + NOTIFICATION_EMAIL);
+  } else {
+    throw new Error("Graph respondio HTTP " + code);
+  }
+}
+
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
