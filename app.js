@@ -75,6 +75,7 @@ form.addEventListener("submit", async (e) => {
     timestamp: new Date().toISOString(),
     provincia: provinciaSel.value,
     municipio: municipioSel.value,
+    empresa: document.getElementById("empresa").value.trim(),
     contacto: document.getElementById("contacto").value.trim(),
     cantidad: document.getElementById("cantidad").value,
     unidad: document.getElementById("unidad").value,
