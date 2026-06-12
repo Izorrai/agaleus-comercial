@@ -2,7 +2,7 @@
 // CONFIGURA AQUÍ la URL del Web App de Google Apps Script.
 // Sigue las instrucciones de apps_script.gs para obtenerla.
 // ============================================================================
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbycLR4MwAqu5E0sBnR8aDENBuMbg5sBIlmlPFgjFbpVec74mfA900nw_t_XEYcIRmfu/exec";
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyP5GLoY_9Fykr6vW2otOOmtCtbf8Wns70w0o7o2pS_TIiNt0d9dov282dJmaYmBCHB/exec";
 // ============================================================================
 
 const form = document.getElementById("lead-form");
