@@ -40,6 +40,26 @@
  * Si añades campos al formulario, añádelos también en HEADERS y en
  * el array de fila dentro de doPost().
  *
+ * ----------------------------------------------------------------------------
+ * EMAIL DE NOTIFICACIÓN VIA MICROSOFT GRAPH
+ * ----------------------------------------------------------------------------
+ * El script avisa a NOTIFICATION_EMAIL por cada lead nuevo. El email NO se
+ * envía desde tu cuenta personal de Google: se manda vía Microsoft Graph
+ * desde el buzón corporativo MAIL_FROM (típicamente el mismo valorizacion@).
+ *
+ * Para activarlo, configura 4 Script Properties (Project Settings ->
+ * Script properties -> Add script property). Sin estas propiedades, el
+ * envío de email se desactiva silenciosamente y el lead se sigue guardando:
+ *
+ *    MS_TENANT_ID      = <Directory (tenant) ID de Azure AD>
+ *    MS_CLIENT_ID      = <Application (client) ID>
+ *    MS_CLIENT_SECRET  = <Client secret value>
+ *    MAIL_FROM         = valorizacion@agaleus.com  (buzón remitente)
+ *
+ * La app registration de Azure AD necesita "Mail.Send" (Application) con
+ * admin consent. Las herramientas firma_* de Agaleus ya lo tienen
+ * consentido en la misma app, así que reusamos esas credenciales.
+ *
  * ============================================================================
  */
 
@@ -96,13 +116,22 @@ function doGet() {
 function sendNotification_(data, fecha) {
   if (!NOTIFICATION_EMAIL) return;
   try {
+    const props  = PropertiesService.getScriptProperties();
+    const tenant = props.getProperty("MS_TENANT_ID");
+    const client = props.getProperty("MS_CLIENT_ID");
+    const secret = props.getProperty("MS_CLIENT_SECRET");
+    const from   = props.getProperty("MAIL_FROM") || NOTIFICATION_EMAIL;
+    if (!tenant || !client || !secret) {
+      console.warn("Faltan Script Properties MS_TENANT_ID / MS_CLIENT_ID / MS_CLIENT_SECRET. Aviso desactivado.");
+      return;
+    }
+
     const fechaTxt = Utilities.formatDate(
       fecha, Session.getScriptTimeZone() || "Europe/Madrid",
       "dd/MM/yyyy HH:mm");
     const empresa  = data.empresa  || "(sin nombre)";
     const municipio = [data.municipio, data.provincia].filter(Boolean).join(", ");
     const cantidad = [data.cantidad, data.unidad].filter(Boolean).join(" ");
-    const asunto = "Nuevo lead comercial - " + empresa;
 
     const filas = [
       ["Empresa",     empresa],
@@ -132,19 +161,57 @@ function sendNotification_(data, fecha) {
          <p style="margin:20px 0 0;font-size:12px;color:#6b7280;">Ver todos los leads en la Google Sheet enlazada al script.</p>
        </div>`;
 
-    const plano = filas.map(([k, v]) => `${k}: ${v}`).join("\n");
+    const token = graphToken_(tenant, client, secret);
+    const message = {
+      message: {
+        subject: "Nuevo lead comercial - " + empresa,
+        body: { contentType: "HTML", content: html },
+        toRecipients: [{ emailAddress: { address: NOTIFICATION_EMAIL } }],
+      },
+      saveToSentItems: false,
+    };
+    if (data.email && data.email.indexOf("@") > 0) {
+      message.message.replyTo = [{ emailAddress: { address: data.email } }];
+    }
 
-    MailApp.sendEmail({
-      to:       NOTIFICATION_EMAIL,
-      subject:  asunto,
-      body:     plano,
-      htmlBody: html,
-      name:     "Agaleus Comercial",
-      replyTo:  data.email || undefined,
-    });
+    const res = UrlFetchApp.fetch(
+      "https://graph.microsoft.com/v1.0/users/" + encodeURIComponent(from) + "/sendMail",
+      {
+        method: "post",
+        contentType: "application/json",
+        headers: { Authorization: "Bearer " + token },
+        payload: JSON.stringify(message),
+        muteHttpExceptions: true,
+      }
+    );
+    const code = res.getResponseCode();
+    if (code !== 200 && code !== 202) {
+      console.error("Graph sendMail HTTP " + code + ": " + res.getContentText().slice(0, 400));
+    }
   } catch (err) {
     console.error("No se pudo enviar el aviso por email:", err);
   }
+}
+
+function graphToken_(tenant, client, secret) {
+  const res = UrlFetchApp.fetch(
+    "https://login.microsoftonline.com/" + tenant + "/oauth2/v2.0/token",
+    {
+      method: "post",
+      payload: {
+        grant_type:    "client_credentials",
+        client_id:     client,
+        client_secret: secret,
+        scope:         "https://graph.microsoft.com/.default",
+      },
+      muteHttpExceptions: true,
+    }
+  );
+  const data = JSON.parse(res.getContentText());
+  if (!data.access_token) {
+    throw new Error("Graph token error: " + res.getContentText().slice(0, 400));
+  }
+  return data.access_token;
 }
 
 function escapeHtml_(s) {
