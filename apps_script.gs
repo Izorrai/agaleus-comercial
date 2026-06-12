@@ -72,7 +72,7 @@
 const SHEET_NAME = "Leads";
 const HEADERS = [
   "Fecha", "Provincia", "Municipio", "Empresa", "Contacto",
-  "Cantidad", "Unidad", "Residuo", "Frecuencia",
+  "Cantidad", "Unidad", "Residuo", "Frecuencia", "Urgencia",
   "Teléfono", "Email", "Notas"
 ];
 
@@ -159,6 +159,7 @@ function doPost(e) {
       data.unidad || "",
       data.residuo || "Aceite usado",
       data.frecuencia || "",
+      data.urgencia || "",
       data.telefono || "",
       data.email || "",
       data.notas || ""
@@ -211,6 +212,7 @@ function sendNotification_(data, fecha) {
       ["Residuo",     data.residuo   || "Aceite usado"],
       ["Cantidad",    cantidad],
       ["Frecuencia",  data.frecuencia|| ""],
+      ["Urgencia",    data.urgencia  || ""],
       ["Teléfono",    data.telefono  || ""],
       ["Email",       data.email     || ""],
       ["Notas",       data.notas     || ""],
@@ -291,6 +293,7 @@ function writeToSharepointExcel_(data, fecha) {
       data.unidad || "",
       data.residuo || "Aceite usado",
       data.frecuencia || "",
+      data.urgencia || "",
       data.telefono || "",
       data.email || "",
       data.notas || ""
