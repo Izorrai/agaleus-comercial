@@ -6,8 +6,8 @@
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a2e4a",
-  "theme_color": "#0a2e4a",
+  "background_color": "#0e3540",
+  "theme_color": "#0e3540",
   "icons": [
     {
       "src": "logo_agaleus.png",

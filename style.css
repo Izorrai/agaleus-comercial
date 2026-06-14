@@ -1,15 +1,15 @@
 :root {
-  --agaleus-dark: #0a2e4a;
-  --agaleus-blue: #1d5a8e;
-  --agaleus-accent: #2ea3d8;
-  --bg: #f4f6f9;
+  --agaleus-dark: #0e3540;
+  --agaleus-teal: #1c5263;
+  --agaleus-green: #14e08a;
+  --bg: #f4f7f8;
   --card: #ffffff;
-  --text: #1a1a1a;
-  --muted: #6b7280;
-  --border: #d9dde3;
-  --ok: #1f9d55;
+  --text: #16323b;
+  --muted: #6b7f87;
+  --border: #dbe4e7;
+  --ok: #0f9d6e;
   --err: #c0392b;
-  --radius: 14px;
+  --radius: 16px;
 }
 
 * { box-sizing: border-box; }
@@ -28,34 +28,55 @@ html, body {
 }
 
 .topbar {
-  background: linear-gradient(180deg, var(--agaleus-dark) 0%, var(--agaleus-blue) 100%);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(20, 224, 138, 0.16), transparent 42%),
+    radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.05), transparent 45%),
+    linear-gradient(135deg, #0a2530 0%, var(--agaleus-dark) 45%, var(--agaleus-teal) 100%);
   color: white;
-  padding: 24px 20px 28px;
+  padding: 28px 20px 32px;
   text-align: center;
-  border-bottom-left-radius: 24px;
-  border-bottom-right-radius: 24px;
-  box-shadow: 0 4px 16px rgba(10, 46, 74, 0.15);
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  box-shadow: 0 4px 20px rgba(10, 46, 74, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--agaleus-green), transparent 75%);
 }
 
 .logo {
-  height: 48px;
+  height: 52px;
   width: auto;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   filter: brightness(0) invert(1);
 }
 
 .topbar h1 {
-  font-size: 22px;
+  font-size: 23px;
   margin: 0;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.3px;
 }
 
 .topbar .subtitle {
-  margin: 4px 0 0;
-  font-size: 14px;
-  opacity: 0.85;
-  font-weight: 400;
+  display: inline-block;
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--agaleus-dark);
+  background: var(--agaleus-green);
+  padding: 5px 14px;
+  border-radius: 20px;
 }
 
 main {
@@ -99,7 +120,7 @@ input, select, textarea {
 }
 
 select {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%236b7280' d='M6 8L0 0h12z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%236b7f87' d='M6 8L0 0h12z'/></svg>");
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 36px;
@@ -107,8 +128,8 @@ select {
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--agaleus-accent);
-  box-shadow: 0 0 0 3px rgba(46, 163, 216, 0.18);
+  border-color: var(--agaleus-green);
+  box-shadow: 0 0 0 3px rgba(20, 224, 138, 0.22);
 }
 
 input:disabled, select:disabled {
@@ -128,10 +149,10 @@ textarea { resize: vertical; min-height: 70px; }
   width: 100%;
   margin-top: 20px;
   padding: 16px;
-  background: var(--agaleus-dark);
-  color: white;
+  background: var(--agaleus-green);
+  color: var(--agaleus-dark);
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -140,16 +161,16 @@ textarea { resize: vertical; min-height: 70px; }
   min-height: 56px;
 }
 
-.btn-primary:hover { background: var(--agaleus-blue); }
+.btn-primary:hover { background: #0fcf7d; }
 .btn-primary:active { transform: scale(0.98); }
-.btn-primary:disabled { background: var(--muted); cursor: wait; }
+.btn-primary:disabled { background: var(--muted); color: white; cursor: wait; }
 
 .btn-loader {
   display: inline-block;
   width: 18px;
   height: 18px;
-  border: 2.5px solid rgba(255, 255, 255, 0.4);
-  border-top-color: white;
+  border: 2.5px solid rgba(14, 53, 64, 0.25);
+  border-top-color: var(--agaleus-dark);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   vertical-align: middle;
@@ -168,7 +189,10 @@ textarea { resize: vertical; min-height: 70px; }
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s;
 }
+
+.btn-secondary:hover { background: var(--bg); }
 
 .toast {
   margin-top: 20px;
@@ -185,9 +209,9 @@ textarea { resize: vertical; min-height: 70px; }
 .toast span { font-size: 15px; }
 
 .toast-ok {
-  background: #e8f6ee;
+  background: #e6f7f0;
   color: var(--ok);
-  border: 1px solid #b8e3c7;
+  border: 1px solid #b3e6cf;
 }
 
 .toast-err {
