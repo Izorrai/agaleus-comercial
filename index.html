@@ -63,9 +63,9 @@
       </label>
 
       <label class="field">
-        <span class="label">Frecuencia de entrada en planta</span>
-        <select id="frecuencia" name="frecuencia" required>
-          <option value="" disabled selected>Elige frecuencia…</option>
+        <span class="label">Frecuencia de entrada en planta <span class="optional">(opcional)</span></span>
+        <select id="frecuencia" name="frecuencia">
+          <option value="" selected>Sin especificar</option>
           <option value="Semanal">Semanal</option>
           <option value="Quincenal">Quincenal</option>
           <option value="Mensual">Mensual</option>
@@ -80,8 +80,7 @@
       <label class="field">
         <span class="label">Urgencia</span>
         <select id="urgencia" name="urgencia" required>
-          <option value="" disabled selected>Elige urgencia…</option>
-          <option value="Normal">Normal</option>
+          <option value="Normal" selected>Normal</option>
           <option value="Urgente">Urgente</option>
           <option value="Desbordado">Desbordado</option>
         </select>
