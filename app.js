@@ -84,6 +84,32 @@ function saveHistory(items) {
   } catch {}
 }
 
+// Trae las últimas N filas desde la Google Sheet (vía Apps Script).
+// El cache local (localStorage) sigue mostrándose mientras esto resuelve,
+// así no hay pantalla en blanco si la red tarda.
+async function fetchHistoryFromServer() {
+  if (!WEBAPP_URL || WEBAPP_URL.startsWith("PEGA_AQUI")) return;
+  try {
+    const res = await fetch(WEBAPP_URL + "?action=history&n=" + HISTORY_MAX, { method: "GET" });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json.ok || !Array.isArray(json.items)) return;
+    const mapped = json.items.map(row => ({
+      timestamp: row["Fecha"],
+      empresa:   row["Empresa"],
+      provincia: row["Provincia"],
+      municipio: row["Municipio"],
+      cantidad:  row["Cantidad"],
+      unidad:    row["Unidad"],
+      urgencia:  row["Urgencia"] || "Normal",
+    })).filter(it => it.empresa);
+    saveHistory(mapped);
+    renderHistory();
+  } catch {
+    // Sin conexión: nos quedamos con el cache local. No es un error visible.
+  }
+}
+
 function escapeHtml(s) {
   return String(s || "").replace(/[&<>"']/g, c => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -148,6 +174,7 @@ historyClear.addEventListener("click", () => {
 });
 
 renderHistory();
+fetchHistoryFromServer();
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();

@@ -178,11 +178,43 @@ function doPost(e) {
   }
 }
 
-function doGet() {
+function doGet(e) {
+  const action = (e && e.parameter && e.parameter.action) || "";
+  if (action === "history") {
+    return getHistory_(e);
+  }
   // Sirve para comprobar desde el navegador que el endpoint está vivo.
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, service: "Agaleus Comercial" }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getHistory_(e) {
+  try {
+    const n = Math.min(Math.max(parseInt(e.parameter.n, 10) || 30, 1), 100);
+    const sheet = getOrCreateSheet_();
+    const last = sheet.getLastRow();
+    let items = [];
+    if (last > 1) {
+      const start = Math.max(2, last - n + 1);
+      const rows  = sheet.getRange(start, 1, last - start + 1, HEADERS.length).getValues();
+      items = rows.map(row => {
+        const obj = {};
+        HEADERS.forEach((h, i) => {
+          const v = row[i];
+          obj[h] = (v instanceof Date) ? v.toISOString() : v;
+        });
+        return obj;
+      }).reverse();
+    }
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: true, items: items }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ ok: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 function sendNotification_(data, fecha) {
