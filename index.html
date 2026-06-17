@@ -92,7 +92,7 @@
       </label>
 
       <label class="field">
-        <span class="label">Email</span>
+        <span class="label">Email <span class="optional">(opcional)</span></span>
         <input type="email" id="email" name="email" autocomplete="email" inputmode="email" placeholder="cliente@ejemplo.com">
       </label>
 
@@ -118,6 +118,15 @@
       <span id="error-msg">Revisa la conexión e inténtalo de nuevo.</span>
       <button type="button" id="retry-btn" class="btn-secondary">Reintentar</button>
     </div>
+
+    <section id="history" class="history">
+      <header class="history-head">
+        <h2>Últimos envíos <span id="history-count" class="history-count">(0)</span></h2>
+        <button type="button" id="history-clear" class="history-clear" hidden>Vaciar</button>
+      </header>
+      <p id="history-empty" class="history-empty">Aún no has enviado ningún cliente desde este dispositivo.</p>
+      <ul id="history-list" class="history-list"></ul>
+    </section>
   </main>
 
   <footer>

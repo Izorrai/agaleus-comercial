@@ -226,6 +226,124 @@ textarea { resize: vertical; min-height: 70px; }
   border: 1px solid #f1bcb4;
 }
 
+.history {
+  margin-top: 32px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 12px;
+}
+
+.history-head h2 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--agaleus-dark);
+  font-weight: 700;
+}
+
+.history-count {
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+.history-clear {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.history-clear:hover { background: var(--bg); color: var(--err); }
+
+.history-empty {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  background: var(--bg);
+  border-left: 4px solid var(--muted);
+}
+
+.history-item.urg-low  { border-left-color: var(--agaleus-green); }
+.history-item.urg-mid  { border-left-color: #f0a020; }
+.history-item.urg-high { border-left-color: var(--err); }
+
+.history-main { flex: 1; min-width: 0; }
+
+.history-empresa {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.urg-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: white;
+  color: var(--agaleus-dark);
+  border: 1px solid var(--border);
+}
+
+.urg-high .urg-badge { background: var(--err); color: white; border-color: var(--err); }
+.urg-mid  .urg-badge { background: #f0a020; color: white; border-color: #f0a020; }
+
+.history-when {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 footer {
   text-align: center;
   padding: 20px;

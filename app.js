@@ -16,6 +16,13 @@ const errorBox = document.getElementById("error");
 const errorMsg = document.getElementById("error-msg");
 const newBtn = document.getElementById("new-btn");
 const retryBtn = document.getElementById("retry-btn");
+const historyList = document.getElementById("history-list");
+const historyEmpty = document.getElementById("history-empty");
+const historyCount = document.getElementById("history-count");
+const historyClear = document.getElementById("history-clear");
+
+const HISTORY_KEY = "agaleus.comercial.history";
+const HISTORY_MAX = 30;
 
 // Rellena el desplegable de municipios al cambiar provincia
 provinciaSel.addEventListener("change", () => {
@@ -62,6 +69,86 @@ retryBtn.addEventListener("click", () => {
   errorBox.hidden = true;
 });
 
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(items) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_MAX)));
+  } catch {}
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+function formatWhen(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const today = new Date();
+  const sameDay = d.toDateString() === today.toDateString();
+  const time = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  if (sameDay) return "Hoy " + time;
+  const date = d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" });
+  return date + " " + time;
+}
+
+function renderHistory() {
+  const items = loadHistory();
+  historyCount.textContent = "(" + items.length + ")";
+  historyClear.hidden = items.length === 0;
+  historyEmpty.hidden = items.length > 0;
+  historyList.innerHTML = items.map(it => {
+    const urgClass = it.urgencia === "Desbordado" ? "urg-high"
+                   : it.urgencia === "Urgente" ? "urg-mid"
+                   : "urg-low";
+    const ubic = [it.municipio, it.provincia].filter(Boolean).join(", ");
+    const cant = [it.cantidad, it.unidad].filter(Boolean).join(" ");
+    return `
+      <li class="history-item ${urgClass}">
+        <div class="history-main">
+          <div class="history-empresa">${escapeHtml(it.empresa)}</div>
+          <div class="history-meta">${escapeHtml(ubic)}${cant ? " · " + escapeHtml(cant) : ""}</div>
+        </div>
+        <div class="history-side">
+          <span class="urg-badge">${escapeHtml(it.urgencia || "Normal")}</span>
+          <span class="history-when">${escapeHtml(formatWhen(it.timestamp))}</span>
+        </div>
+      </li>`;
+  }).join("");
+}
+
+function pushToHistory(data) {
+  const items = loadHistory();
+  items.unshift({
+    timestamp: data.timestamp,
+    empresa:   data.empresa,
+    provincia: data.provincia,
+    municipio: data.municipio,
+    cantidad:  data.cantidad,
+    unidad:    data.unidad,
+    urgencia:  data.urgencia || "Normal",
+  });
+  saveHistory(items);
+  renderHistory();
+}
+
+historyClear.addEventListener("click", () => {
+  if (!confirm("¿Vaciar el historial local? Los datos guardados en la Sheet y el Excel no se ven afectados.")) return;
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+});
+
+renderHistory();
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorBox.hidden = true;
@@ -103,6 +190,7 @@ form.addEventListener("submit", async (e) => {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json().catch(() => ({ ok: true }));
     if (json.ok === false) throw new Error(json.error || "Error del servidor");
+    pushToHistory(data);
     showSuccess();
   } catch (err) {
     showError(err.message);
