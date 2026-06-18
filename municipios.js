@@ -33,7 +33,7 @@ const MUNICIPIOS = {
     "Zizurkil","Zumaia","Zumarraga"
   ],
   "Araba": [
-    "Agurain/Salvatierra","Aramaio","Armiñón","Arraia-Maeztu","Artziniega","Asparrena",
+    "Agurain/Salvatierra","Amurrio","Aramaio","Armiñón","Arraia-Maeztu","Artziniega","Asparrena",
     "Aiara/Ayala","Añana","Baños de Ebro/Mañueta","Barrundia","Berantevilla","Bernedo",
     "Kanpezu/Campezo","Elburgo/Burgelu","Elciego","Bilar/Elvillar","Erriberabeitia",
     "Erriberagoitia/Ribera Alta","Harana/Valle de Arana","Iruña Oka/Iruña de Oca",
