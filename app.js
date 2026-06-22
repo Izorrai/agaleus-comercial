@@ -23,7 +23,9 @@ const historyClear = document.getElementById("history-clear");
 const completedList = document.getElementById("completed-list");
 const completedEmpty = document.getElementById("completed-empty");
 const completedCount = document.getElementById("completed-count");
-const completedToggle = document.getElementById("completed-toggle");
+const tabs = document.querySelectorAll(".tab");
+const tabPending = document.getElementById("tab-pending");
+const tabCompleted = document.getElementById("tab-completed");
 
 const HISTORY_KEY = "agaleus.comercial.history";
 const COMPLETED_KEY = "agaleus.comercial.completed";
@@ -205,11 +207,14 @@ historyClear.addEventListener("click", () => {
   renderHistory();
 });
 
-completedToggle.addEventListener("click", () => {
-  const section = document.getElementById("completed-body");
-  const isHidden = section.hidden;
-  section.hidden = !isHidden;
-  completedToggle.textContent = isHidden ? "Ocultar" : "Mostrar";
+tabs.forEach(btn => {
+  btn.addEventListener("click", () => {
+    tabs.forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    const target = btn.dataset.tab;
+    tabPending.hidden = target !== "pending";
+    tabCompleted.hidden = target !== "completed";
+  });
 });
 
 renderHistory();

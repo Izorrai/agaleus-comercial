@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="logo_agaleus.png">
   <link rel="icon" href="logo_agaleus.png">
   <title>Agaleus &middot; Nuevo cliente</title>
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <header class="topbar">
@@ -119,21 +119,23 @@
       <button type="button" id="retry-btn" class="btn-secondary">Reintentar</button>
     </div>
 
-    <section id="history" class="history">
-      <header class="history-head">
-        <h2>Pendientes <span id="history-count" class="history-count">(0)</span></h2>
-        <button type="button" id="history-clear" class="history-clear" hidden>Vaciar</button>
-      </header>
-      <p id="history-empty" class="history-empty">No hay leads pendientes.</p>
-      <ul id="history-list" class="history-list"></ul>
-    </section>
+    <section class="history">
+      <nav class="tabs">
+        <button type="button" class="tab active" data-tab="pending">
+          Pendientes <span id="history-count" class="tab-count">(0)</span>
+        </button>
+        <button type="button" class="tab" data-tab="completed">
+          Completados <span id="completed-count" class="tab-count">(0)</span>
+        </button>
+      </nav>
 
-    <section id="completed" class="history completed-section">
-      <header class="history-head">
-        <h2>Completados <span id="completed-count" class="history-count">(0)</span></h2>
-        <button type="button" id="completed-toggle" class="history-clear">Mostrar</button>
-      </header>
-      <div id="completed-body" hidden>
+      <div id="tab-pending" class="tab-panel">
+        <p id="history-empty" class="history-empty">No hay leads pendientes.</p>
+        <ul id="history-list" class="history-list"></ul>
+        <button type="button" id="history-clear" class="history-clear" hidden>Vaciar caché local</button>
+      </div>
+
+      <div id="tab-completed" class="tab-panel" hidden>
         <p id="completed-empty" class="history-empty">Aún no hay leads completados.</p>
         <ul id="completed-list" class="history-list"></ul>
       </div>
@@ -145,6 +147,6 @@
   </footer>
 
   <script src="municipios.js?v=2"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
