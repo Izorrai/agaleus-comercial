@@ -344,6 +344,29 @@ textarea { resize: vertical; min-height: 70px; }
   color: var(--muted);
 }
 
+.completed-section {
+  border-top: 2px dashed var(--border);
+}
+
+.item-done {
+  border-left-color: var(--ok) !important;
+  opacity: 0.75;
+}
+
+.item-done .history-empresa {
+  color: var(--ok);
+}
+
+.history-obs {
+  font-size: 12px;
+  color: var(--agaleus-teal);
+  font-style: italic;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 footer {
   text-align: center;
   padding: 20px;

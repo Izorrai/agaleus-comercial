@@ -20,11 +20,15 @@ const historyList = document.getElementById("history-list");
 const historyEmpty = document.getElementById("history-empty");
 const historyCount = document.getElementById("history-count");
 const historyClear = document.getElementById("history-clear");
+const completedList = document.getElementById("completed-list");
+const completedEmpty = document.getElementById("completed-empty");
+const completedCount = document.getElementById("completed-count");
+const completedToggle = document.getElementById("completed-toggle");
 
 const HISTORY_KEY = "agaleus.comercial.history";
-const HISTORY_MAX = 30;
+const COMPLETED_KEY = "agaleus.comercial.completed";
+const HISTORY_MAX = 50;
 
-// Rellena el desplegable de municipios al cambiar provincia
 provinciaSel.addEventListener("change", () => {
   const prov = provinciaSel.value;
   const lista = MUNICIPIOS[prov] || [];
@@ -69,24 +73,21 @@ retryBtn.addEventListener("click", () => {
   errorBox.hidden = true;
 });
 
-function loadHistory() {
+function loadStore(key) {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function saveHistory(items) {
+function saveStore(key, items, max) {
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_MAX)));
+    localStorage.setItem(key, JSON.stringify(items.slice(0, max || HISTORY_MAX)));
   } catch {}
 }
 
-// Trae las últimas N filas desde la Google Sheet (vía Apps Script).
-// El cache local (localStorage) sigue mostrándose mientras esto resuelve,
-// así no hay pantalla en blanco si la red tarda.
 async function fetchHistoryFromServer() {
   if (!WEBAPP_URL || WEBAPP_URL.startsWith("PEGA_AQUI")) return;
   try {
@@ -94,19 +95,36 @@ async function fetchHistoryFromServer() {
     if (!res.ok) return;
     const json = await res.json();
     if (!json.ok || !Array.isArray(json.items)) return;
-    const mapped = json.items.map(row => ({
-      timestamp: row["Fecha"],
-      empresa:   row["Empresa"],
-      provincia: row["Provincia"],
-      municipio: row["Municipio"],
-      cantidad:  row["Cantidad"],
-      unidad:    row["Unidad"],
-      urgencia:  row["Urgencia"] || "Normal",
-    })).filter(it => it.empresa);
-    saveHistory(mapped);
+
+    const pending = [];
+    const completed = [];
+
+    json.items.forEach(row => {
+      const it = {
+        timestamp:     row["Fecha"],
+        empresa:       row["Empresa"],
+        provincia:     row["Provincia"],
+        municipio:     row["Municipio"],
+        cantidad:      row["Cantidad"],
+        unidad:        row["Unidad"],
+        urgencia:      row["Urgencia"] || "Normal",
+        observaciones: row["Observaciones"] || "",
+        completado:    String(row["Completado"] || "NO").toUpperCase().trim(),
+      };
+      if (!it.empresa) return;
+      if (it.completado === "SI") {
+        completed.push(it);
+      } else {
+        pending.push(it);
+      }
+    });
+
+    saveStore(HISTORY_KEY, pending);
+    saveStore(COMPLETED_KEY, completed);
     renderHistory();
+    renderCompleted();
   } catch {
-    // Sin conexión: nos quedamos con el cache local. No es un error visible.
+    // Sin conexión: nos quedamos con el cache local.
   }
 }
 
@@ -127,33 +145,45 @@ function formatWhen(iso) {
   return date + " " + time;
 }
 
+function renderHistoryItem(it, done) {
+  const urgClass = it.urgencia === "Desbordado" ? "urg-high"
+                 : it.urgencia === "Urgente" ? "urg-mid"
+                 : "urg-low";
+  const ubic = [it.municipio, it.provincia].filter(Boolean).join(", ");
+  const cant = [it.cantidad, it.unidad].filter(Boolean).join(" ");
+  const doneClass = done ? " item-done" : "";
+  const obs = it.observaciones ? `<div class="history-obs">${escapeHtml(it.observaciones)}</div>` : "";
+  return `
+    <li class="history-item ${urgClass}${doneClass}">
+      <div class="history-main">
+        <div class="history-empresa">${done ? "&#10003; " : ""}${escapeHtml(it.empresa)}</div>
+        <div class="history-meta">${escapeHtml(ubic)}${cant ? " · " + escapeHtml(cant) : ""}</div>
+        ${obs}
+      </div>
+      <div class="history-side">
+        <span class="urg-badge">${escapeHtml(it.urgencia || "Normal")}</span>
+        <span class="history-when">${escapeHtml(formatWhen(it.timestamp))}</span>
+      </div>
+    </li>`;
+}
+
 function renderHistory() {
-  const items = loadHistory();
+  const items = loadStore(HISTORY_KEY);
   historyCount.textContent = "(" + items.length + ")";
   historyClear.hidden = items.length === 0;
   historyEmpty.hidden = items.length > 0;
-  historyList.innerHTML = items.map(it => {
-    const urgClass = it.urgencia === "Desbordado" ? "urg-high"
-                   : it.urgencia === "Urgente" ? "urg-mid"
-                   : "urg-low";
-    const ubic = [it.municipio, it.provincia].filter(Boolean).join(", ");
-    const cant = [it.cantidad, it.unidad].filter(Boolean).join(" ");
-    return `
-      <li class="history-item ${urgClass}">
-        <div class="history-main">
-          <div class="history-empresa">${escapeHtml(it.empresa)}</div>
-          <div class="history-meta">${escapeHtml(ubic)}${cant ? " · " + escapeHtml(cant) : ""}</div>
-        </div>
-        <div class="history-side">
-          <span class="urg-badge">${escapeHtml(it.urgencia || "Normal")}</span>
-          <span class="history-when">${escapeHtml(formatWhen(it.timestamp))}</span>
-        </div>
-      </li>`;
-  }).join("");
+  historyList.innerHTML = items.map(it => renderHistoryItem(it, false)).join("");
+}
+
+function renderCompleted() {
+  const items = loadStore(COMPLETED_KEY);
+  completedCount.textContent = "(" + items.length + ")";
+  completedEmpty.hidden = items.length > 0;
+  completedList.innerHTML = items.map(it => renderHistoryItem(it, true)).join("");
 }
 
 function pushToHistory(data) {
-  const items = loadHistory();
+  const items = loadStore(HISTORY_KEY);
   items.unshift({
     timestamp: data.timestamp,
     empresa:   data.empresa,
@@ -162,8 +192,10 @@ function pushToHistory(data) {
     cantidad:  data.cantidad,
     unidad:    data.unidad,
     urgencia:  data.urgencia || "Normal",
+    observaciones: "",
+    completado: "NO",
   });
-  saveHistory(items);
+  saveStore(HISTORY_KEY, items);
   renderHistory();
 }
 
@@ -173,7 +205,15 @@ historyClear.addEventListener("click", () => {
   renderHistory();
 });
 
+completedToggle.addEventListener("click", () => {
+  const section = document.getElementById("completed-body");
+  const isHidden = section.hidden;
+  section.hidden = !isHidden;
+  completedToggle.textContent = isHidden ? "Ocultar" : "Mostrar";
+});
+
 renderHistory();
+renderCompleted();
 fetchHistoryFromServer();
 
 form.addEventListener("submit", async (e) => {
@@ -208,7 +248,6 @@ form.addEventListener("submit", async (e) => {
 
   setLoading(true);
   try {
-    // text/plain evita el preflight CORS contra Apps Script
     const res = await fetch(WEBAPP_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },

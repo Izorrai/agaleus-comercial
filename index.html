@@ -121,11 +121,22 @@
 
     <section id="history" class="history">
       <header class="history-head">
-        <h2>Últimos envíos <span id="history-count" class="history-count">(0)</span></h2>
+        <h2>Pendientes <span id="history-count" class="history-count">(0)</span></h2>
         <button type="button" id="history-clear" class="history-clear" hidden>Vaciar</button>
       </header>
-      <p id="history-empty" class="history-empty">Aún no has enviado ningún cliente desde este dispositivo.</p>
+      <p id="history-empty" class="history-empty">No hay leads pendientes.</p>
       <ul id="history-list" class="history-list"></ul>
+    </section>
+
+    <section id="completed" class="history completed-section">
+      <header class="history-head">
+        <h2>Completados <span id="completed-count" class="history-count">(0)</span></h2>
+        <button type="button" id="completed-toggle" class="history-clear">Mostrar</button>
+      </header>
+      <div id="completed-body" hidden>
+        <p id="completed-empty" class="history-empty">Aún no hay leads completados.</p>
+        <ul id="completed-list" class="history-list"></ul>
+      </div>
     </section>
   </main>
 

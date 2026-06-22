@@ -73,23 +73,12 @@ const SHEET_NAME = "Leads";
 const HEADERS = [
   "Fecha", "Provincia", "Municipio", "Empresa", "Contacto",
   "Cantidad", "Unidad", "Residuo", "Frecuencia", "Urgencia",
-  "Teléfono", "Email", "Notas"
+  "Teléfono", "Email", "Notas", "Observaciones", "Completado"
 ];
 
-// Dirección que recibirá un aviso por cada lead nuevo. Cadena vacía = desactivado.
 const NOTIFICATION_EMAIL = "valorizacion@agaleus.com";
-
-// Nombre de la tabla dentro del Excel de SharePoint. Tiene que existir
-// (Insertar -> Tabla, con nombre "Leads") en el .xlsx referenciado por
-// las Script Properties SP_SITE_ID + SP_DRIVE_ID + SP_ITEM_ID.
 const SP_TABLE_NAME = "Leads";
 
-/**
- * Función de diagnóstico: ejecútala desde el editor (botón "Ejecutar")
- * para verificar que el envío de email vía Graph funciona, sin tener
- * que pasar por la app móvil. Los detalles aparecen en el panel de
- * "Registro de ejecución" (abajo en el editor).
- */
 function probarEmail() {
   const props  = PropertiesService.getScriptProperties();
   const tenant = props.getProperty("MS_TENANT_ID");
@@ -102,7 +91,7 @@ function probarEmail() {
   console.log("MAIL_FROM:",        from   ? from : "FALTA");
   console.log("NOTIFICATION_EMAIL constante:", NOTIFICATION_EMAIL);
   if (!tenant || !client || !secret || !from) {
-    throw new Error("Faltan Script Properties — configúralas en Settings > Script properties.");
+    throw new Error("Faltan Script Properties.");
   }
 
   console.log("Pidiendo token a Microsoft...");
@@ -135,7 +124,6 @@ function probarEmail() {
   );
   const code = res.getResponseCode();
   console.log("HTTP " + code);
-  console.log("Body: " + res.getContentText().slice(0, 800));
   if (code === 200 || code === 202) {
     console.log("OK -> revisa la bandeja de " + NOTIFICATION_EMAIL);
   } else {
@@ -162,8 +150,18 @@ function doPost(e) {
       data.urgencia || "",
       data.telefono || "",
       data.email || "",
-      data.notas || ""
+      data.notas || "",
+      "",
+      "NO"
     ]);
+
+    const lastRow = sheet.getLastRow();
+    const colCompletado = HEADERS.indexOf("Completado") + 1;
+    const rule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(["SI", "NO"], true)
+      .setAllowInvalid(false)
+      .build();
+    sheet.getRange(lastRow, colCompletado).setDataValidation(rule);
 
     writeToSharepointExcel_(data, fecha);
     sendNotification_(data, fecha);
@@ -183,7 +181,6 @@ function doGet(e) {
   if (action === "history") {
     return getHistory_(e);
   }
-  // Sirve para comprobar desde el navegador que el endpoint está vivo.
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, service: "Agaleus Comercial" }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -191,18 +188,20 @@ function doGet(e) {
 
 function getHistory_(e) {
   try {
-    const n = Math.min(Math.max(parseInt(e.parameter.n, 10) || 30, 1), 100);
+    syncCompletadoFromSharepoint_();
+
+    const n = Math.min(Math.max(parseInt(e.parameter.n, 10) || 50, 1), 200);
     const sheet = getOrCreateSheet_();
     const last = sheet.getLastRow();
     let items = [];
     if (last > 1) {
       const start = Math.max(2, last - n + 1);
-      const rows  = sheet.getRange(start, 1, last - start + 1, HEADERS.length).getValues();
+      const rows = sheet.getRange(start, 1, last - start + 1, HEADERS.length).getValues();
       items = rows.map(row => {
         const obj = {};
         HEADERS.forEach((h, i) => {
           const v = row[i];
-          obj[h] = (v instanceof Date) ? v.toISOString() : v;
+          obj[h] = (v instanceof Date) ? v.toISOString() : (v || "");
         });
         return obj;
       }).reverse();
@@ -217,6 +216,65 @@ function getHistory_(e) {
   }
 }
 
+function syncCompletadoFromSharepoint_() {
+  try {
+    const props  = PropertiesService.getScriptProperties();
+    const tenant = props.getProperty("MS_TENANT_ID");
+    const client = props.getProperty("MS_CLIENT_ID");
+    const secret = props.getProperty("MS_CLIENT_SECRET");
+    const site   = props.getProperty("SP_SITE_ID");
+    const drive  = props.getProperty("SP_DRIVE_ID");
+    const item   = props.getProperty("SP_ITEM_ID");
+    if (!tenant || !client || !secret || !site || !drive || !item) return;
+
+    const token = graphToken_(tenant, client, secret);
+    const url = "https://graph.microsoft.com/v1.0/sites/" + site +
+                "/drives/" + drive + "/items/" + item +
+                "/workbook/tables/" + encodeURIComponent(SP_TABLE_NAME) + "/range";
+    const res = UrlFetchApp.fetch(url, {
+      method: "get",
+      headers: { Authorization: "Bearer " + token },
+      muteHttpExceptions: true,
+    });
+    if (res.getResponseCode() !== 200) {
+      console.warn("syncCompletado: HTTP " + res.getResponseCode());
+      return;
+    }
+
+    const range = JSON.parse(res.getContentText());
+    const spValues = range.values;
+    if (!spValues || spValues.length < 2) return;
+
+    const spHeaders = spValues[0];
+    const colIdx = spHeaders.indexOf("Completado");
+    const obsIdx = spHeaders.indexOf("Observaciones");
+    if (colIdx < 0) return;
+
+    const sheet = getOrCreateSheet_();
+    const sheetLast = sheet.getLastRow();
+    if (sheetLast < 2) return;
+
+    const sheetColComp = HEADERS.indexOf("Completado") + 1;
+    const sheetColObs  = HEADERS.indexOf("Observaciones") + 1;
+
+    const spDataRows = spValues.slice(1);
+    const rowsToUpdate = Math.min(spDataRows.length, sheetLast - 1);
+
+    for (let i = 0; i < rowsToUpdate; i++) {
+      const spComp = String(spDataRows[i][colIdx] || "").toUpperCase().trim();
+      if (spComp === "SI" || spComp === "NO") {
+        sheet.getRange(i + 2, sheetColComp).setValue(spComp);
+      }
+      if (obsIdx >= 0 && sheetColObs > 0) {
+        const spObs = String(spDataRows[i][obsIdx] || "");
+        sheet.getRange(i + 2, sheetColObs).setValue(spObs);
+      }
+    }
+  } catch (err) {
+    console.warn("syncCompletadoFromSharepoint_ error:", err);
+  }
+}
+
 function sendNotification_(data, fecha) {
   if (!NOTIFICATION_EMAIL) return;
   try {
@@ -226,7 +284,7 @@ function sendNotification_(data, fecha) {
     const secret = props.getProperty("MS_CLIENT_SECRET");
     const from   = props.getProperty("MAIL_FROM") || NOTIFICATION_EMAIL;
     if (!tenant || !client || !secret) {
-      console.warn("Faltan Script Properties MS_TENANT_ID / MS_CLIENT_ID / MS_CLIENT_SECRET. Aviso desactivado.");
+      console.warn("Faltan Script Properties para email. Aviso desactivado.");
       return;
     }
 
@@ -328,7 +386,9 @@ function writeToSharepointExcel_(data, fecha) {
       data.urgencia || "",
       data.telefono || "",
       data.email || "",
-      data.notas || ""
+      data.notas || "",
+      "",
+      "NO"
     ]];
 
     const token = graphToken_(tenant, client, secret);
@@ -368,12 +428,37 @@ function probarSharepoint() {
     empresa: "PRUEBA APPSSCRIPT - BORRAR",
     contacto: "Test desde Apps Script",
     cantidad: "10", unidad: "L", residuo: "Aceite usado",
-    frecuencia: "Puntual",
+    frecuencia: "Puntual", urgencia: "Normal",
     telefono: "600000000", email: "test@test.com",
     notas: "Fila enviada por probarSharepoint(). Borrala."
   };
   writeToSharepointExcel_(data, new Date());
   console.log("Si no aparece error arriba, revisa el Excel de SharePoint.");
+}
+
+function arreglarDesplegable() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Leads");
+  const colCompletado = HEADERS.indexOf("Completado") + 1;
+
+  const rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["SI", "NO"], true)
+    .setAllowInvalid(false)
+    .build();
+
+  sheet.getRange(2, colCompletado, sheet.getMaxRows())
+    .setDataValidation(rule);
+
+  const rules = sheet.getConditionalFormatRules();
+  rules.push(
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenTextEqualTo("SI")
+      .setBackground("#16a34a")
+      .setFontColor("#ffffff")
+      .setRanges([sheet.getRange(2, colCompletado, sheet.getMaxRows())])
+      .build()
+  );
+  sheet.setConditionalFormatRules(rules);
+  Logger.log("Desplegable y formato aplicados");
 }
 
 function graphToken_(tenant, client, secret) {
@@ -406,6 +491,7 @@ function escapeHtml_(s) {
 function getOrCreateSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
+
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
     sheet.appendRow(HEADERS);
@@ -418,5 +504,6 @@ function getOrCreateSheet_() {
   } else if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);
   }
+
   return sheet;
 }
