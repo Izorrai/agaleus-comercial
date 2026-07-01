@@ -25,7 +25,7 @@ const MUNICIPIOS = {
     "Berastegi","Bergara","Berrobi","Bidegoian","Deba","Donostia/San Sebastián","Eibar",
     "Elduain","Elgeta","Elgoibar","Errenteria","Errezil","Eskoriatza","Ezkio-Itsaso",
     "Gabiria","Gaintza","Gaztelu","Getaria","Hernani","Hernialde","Hondarribia","Ibarra",
-    "Idiazabal","Ikaztegieta","Irun","Irura","Itsasondo","Larraul","Lasarte-Oria","Lazkao",
+    "Idiazabal","Ikaztegieta","Irun","Irura","Itsasondo","Itziar","Larraul","Lasarte-Oria","Lazkao",
     "Leaburu","Legazpi","Legorreta","Leintz-Gatzaga","Lezo","Lizartza","Mendaro","Mutiloa",
     "Mutriku","Oiartzun","Olaberria","Oñati","Ordizia","Orendain","Orexa","Orio",
     "Ormaiztegi","Pasaia","Segura","Soraluze/Placencia de las Armas","Tolosa","Urnieta",
